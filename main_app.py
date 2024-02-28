@@ -2,7 +2,10 @@ import get_data_from_market as dm
 import data_processing as dp
 import action_decition as ad
 import create_position as cp
+import keys
 
+KEY = keys.key
+SECRET_KEY = keys.secret_key
 COIN_PAIR = ['BTCUSDT', 'ETHUSDT', 'LTCUSDT']
 POSITION_SIZE = 10  # размер позиции в процентах от депозита
 
