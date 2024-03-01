@@ -1,74 +1,29 @@
-import hashlib
-import hmac
-import time
 import requests
 
-import keys
-
-BASE_URL = "https://fapi.binance.com"
-url_order = "/fapi/v1/order"
-
-
-def get_timestamp():
-    return str(int(time.time() * 1000))
-
+import marker_actions as ma
 
 
 def create_position(order):
     global url_order
     if order["type"] == "LIMIT":
-        params = {
-            'symbol': order['symbol'],
-            'type': order['type'],
-            'side': order['side'],
-            'timestamp': get_timestamp(),
-            'quantity': order['quantity'],
-            'price': order['price'],
-            'timeInForce': 'GTC'
-        }
+        req = ma.limit_pos(order)
 
     if order['type'] == 'MARKET':
-        params = {
-            'symbol': order['symbol'],
-            'type': order['type'],
-            'side': order['side'],
-            'timestamp': get_timestamp(),
-            'quantity': order['quantity']
-        }
+        req = ma.market_pos(order)
 
     if order['type'] == 'STOP_MARKET':
-        params = {
-            'symbol': order['symbol'],
-            'timestamp': get_timestamp(),
-            'type': order['type'],
-            'side': order['side'],
-            'stopprice': order['stopprice'],
-            'quantity': 35,
-            'closePosition': 'false'
-        }
+        req = ma.stop_market(order)
+
 
     if order['type'] == 'CancelOrder':
-        params = {
-            'symbol': order['symbol'],
-            'timestamp': get_timestamp()
-        }
+        req = ma.cancel_order(order)
+
         url_order = "/fapi/v1/allOpenOrders"
-
-    query_string = '&'.join([f'{key}={params[key]}' for key in params])
-    signature = hmac.new(keys.Secret_key.encode("utf-8"), query_string.encode("utf-8"), hashlib.sha256).hexdigest()
-    params['signature'] = signature
-    headers = {'X-MBX-APIKEY': keys.API_key}
-
-    if order['type'] == 'CancelOrder':
-        req = requests.delete(BASE_URL + url_order, headers=headers, params=params)
-    else:
-        req = requests.post(BASE_URL + url_order, headers=headers, params=params)
-    print(req.json())
 
 
 if __name__ == '__main__':
     # отложенная заявка срабатывает сразу если цена лучше чем в заявке
-    create_position({'symbol':'GMTUSDT', 'side': 'BUY', 'type': 'LIMIT', 'price': 0.301, 'quantity': 35})
+    create_position({'symbol': 'GMTUSDT', 'side': 'BUY', 'type': 'LIMIT', 'price': 0.301, 'quantity': 35})
     # покупка по маркету
     # create_position({'symbol': 'BLZUSDT', 'side': 'BUY', 'type': 'MARKET', 'quantity': 35})
     # снимает все отложенные заявки для этой пары
