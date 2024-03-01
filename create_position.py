@@ -4,19 +4,17 @@ import marker_actions as ma
 
 
 def create_position(order):
-    global url_order
     if order["type"] == "LIMIT":
-        req = ma.limit_pos(order)
+        ma.limit_pos(order)
 
     if order['type'] == 'MARKET':
-        req = ma.market_pos(order)
+        ma.market_pos(order)
 
     if order['type'] == 'STOP_MARKET':
-        req = ma.stop_market(order)
-
+        ma.stop_market(order)
 
     if order['type'] == 'CancelOrder':
-        req = ma.cancel_order(order)
+        ma.cancel_order(order)
 
         url_order = "/fapi/v1/allOpenOrders"
 
