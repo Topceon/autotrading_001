@@ -1,73 +1,60 @@
-import requests
-import keys
-import create_position
-
-BASE_URL = "https://fapi.binance.com"
-url_order = "/fapi/v1/klines"
-
-
-def coins_prices(coins):
-    a = {}
-    b = create_position.query_new_prices()
-    for coin in coins:
-        a[coin] = {}
-        a[coin]['price'] = b[coin]
-    return a
-
-
-def get_deposit_size():
-    """Запрашиваем размер депозита на бирже
-    размер должен быть в долларовом эквиваленте"""
-    # TODO исправить захардкоженный вариант после отработки работоспособности других функций
-    return 10
+import market_actions as ma
 
 
 def get_volume_pos(coin_prices: dict, volume_pos: int) -> dict:
     """
     Получаем размер позиции для данной монеты из расчета размера депозита на данный момент
     """
-    coin_vol_pos = {coin_price: volume_pos * get_deposit_size() / coin_price for coin_price in coin_prices}
+    coin_vol_pos = {coin_price: volume_pos * ma.get_deposit_size() / coin_price for coin_price in coin_prices}
     # TODO исправить захардкоженный вариант после отработки работоспособности других функций
     coin_vol_pos = {'BLZUSDT': 0.01, 'XRPUSDT': 0.01}  # TODO вручную скорректировать в момент тестирования
     return coin_vol_pos
 
 
-def get_klines(coin):
-    params = {
-        'symbol': coin,
-        'interval': '1m',
-        'limit': 999
-    }
-    headers = {'X-MBX-APIKEY': keys.API_key}
-    req = requests.get(BASE_URL + url_order, headers=headers, params=params)
-    klines = req.json()
-    return klines
-
-
-def prices_for_rsi(coin, rsi):
-    pass
-
-
-def get_data(coins, rsies):
-    prices = coins_prices(coins)
-    print(prices)
+def coins_prices(coins):
+    a = {}
+    b = ma.query_new_prices()
     for coin in coins:
-        klines = get_klines(coin)
-        for j in rsies:
-            prices[coin][j] = []
-            mins = 5
-            if j == 14:
-                mins = 60
-            for i in klines[::-mins]:
-                prices[coin][j].append(i[4])
-                if len(prices[coin][j]) >= j:
-                    break
-        prices[coin][j] = prices[coin][j][::-1]
-    return prices
+        a[coin] = b[coin]
+    return a
+
+
+def all_coins_prices():
+    a = {}
+    b = ma.query_new_prices()
+    for coin in b:
+        a[coin] = b[coin]
+    return a
+
+
+def get_data(coins):
+    d = {}
+    for coin in coins:
+        data = ma.get_klines(coin)
+        d[coin] = data
+    return d
 
 
 if __name__ == '__main__':
-    print(get_data(["BLZUSDT", "AVAXUSDT", "ARBUSDT"], [14, 5]))  # результат должен выглядеть так {rsi_1:[25,10], rsi_2:[12, 4]}, "AVAXUSDT":{rsi_1:[25,10], rsi_2:[12, 4]}
+    # входящие данные ['BTCUSDT', 'ETHUSDT', 'LTCUSDT']
+    # результат {'BTCUSDT': [[время входа, цена открытия, максимум свечи, минимум свечи, цена закрытия, объем, и еще 6],
+    #                       [время входа, цена открытия, максимум свечи, минимум свечи, цена закрытия, объем, и еще 6],
+    #                       [время входа, цена открытия, максимум свечи, минимум свечи, цена закрытия, объем, и еще 6]],
+    #           'ETHUSDT': [[время входа, цена открытия, максимум свечи, минимум свечи, цена закрытия, объем, и еще 6],
+    #                       [время входа, цена открытия, максимум свечи, минимум свечи, цена закрытия, объем, и еще 6],
+    #                       [время входа, цена открытия, максимум свечи, минимум свечи, цена закрытия, объем, и еще 6]],
+    #           'LTCUSDT': [[время входа, цена открытия, максимум свечи, минимум свечи, цена закрытия, объем, и еще 6],
+    #                       [время входа, цена открытия, максимум свечи, минимум свечи, цена закрытия, объем, и еще 6],
+    #                        [время входа, цена открытия, максимум свечи, минимум свечи, цена закрытия, объем, и еще 6]]}
+    print(get_data(['1000PEPEUSDT', 'WLDUSDT']))
+
+    # входящие данные ['BTCUSDT', 'ETHUSDT', 'LTCUSDT']
+    # результат {'BTCUSDT': 67282.0, 'ETHUSDT': 3568.53, 'LTCUSDT': 85.68}
+    # print(coins_prices(['BTCUSDT', 'ETHUSDT', 'LTCUSDT']))
+
+    # входящие данные пустые
+    # результат все цены в USDT {'BTCUSDT': 67282.0, 'ETHUSDT': 3568.53, 'LTCUSDT': 85.68}
+    # print(all_coins_prices())
 
 """
 m -> minutes; h -> hours; d -> days; w -> weeks; M -> months
@@ -355,4 +342,3 @@ m -> minutes; h -> hours; d -> days; w -> weeks; M -> months
       14: ['1.612500', '1.613000', '1.585300', '1.585000', '1.573700', '1.588800', '1.576300', '1.561200', '1.562200', '1.542800', '1.562600', '1.575900', '1.586800', '1.578500'], 
       5: ['1.601500', '1.593600', '1.584200', '1.582700', '1.578500']}}
 """
-

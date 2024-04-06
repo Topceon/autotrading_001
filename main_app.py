@@ -1,11 +1,9 @@
 import get_data_from_market as dm
-import data_processing as dp
-import action_decition as ad
+import strategy_2 as sg
 import create_position as cp
-import keys
+import market_actions as ma
 
-
-COIN_PAIR = ['BTCUSDT', 'ETHUSDT', 'LTCUSDT']
+COIN_PAIR = ['1000PEPEUSDT', 'WLDUSDT']
 POSITION_SIZE = 10  # размер позиции в процентах от депозита
 
 
@@ -14,26 +12,21 @@ def get_data_from_market(coin_pair):
     return data
 
 
-def data_processing(raw_data):
-    data = dp.data_processing(raw_data)
-    return data
-
-
-def action_decision(list_data):
-    data = ad.action_decision(list_data)
+def strategy(data):
+    data = sg.strategy(data)
     return data
 
 
 def create_position(list_data):
-    data = cp.create_position(list_data)
-    return data  # [{'symbol': 'BTCUSDT', 'price': 4, 'quantity': 5}]
+    for data in list_data:
+        cp.create_position(data)
 
 
 def run_main_app(coin_pair):
     data = get_data_from_market(coin_pair)
-    data = data_processing(data)
-    positions = action_decision(data)
-    create_position(positions)
+    # while True: с задержкой
+    data = strategy(data)
+    create_position(data)
 
 
 if __name__ == '__main__':
