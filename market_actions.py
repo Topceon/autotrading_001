@@ -40,7 +40,7 @@ def get_klines(coin):
 
 def create_order(order, headers, params):
     if order['type'] == 'CancelOrder':
-        req = requests.delete(BASE_URL + url_order, headers=headers, params=params)
+        req = requests.delete(BASE_URL + "/fapi/v1/allOpenOrders", headers=headers, params=params)
     else:
         req = requests.post(BASE_URL + url_order, headers=headers, params=params)
     print(req.json())

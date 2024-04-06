@@ -52,7 +52,6 @@ def create_position(order):
             'symbol': order['symbol'],
             'timestamp': ma.get_timestamp()
         }
-        url_order = "/fapi/v1/allOpenOrders"
 
     params['signature'] = signature(params)
     headers = {'X-MBX-APIKEY': keys.API_key}

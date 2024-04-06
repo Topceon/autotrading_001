@@ -6,11 +6,6 @@ PRICE_PRECISION = {'1000PEPEUSDT': 7, 'WLDUSDT': 4}
 DEP = 10
 
 
-def precision(str_l):
-    _, b = str_l.split('.')
-    return len(b)
-
-
 def average(val):
     prices = []
     for i in val:
@@ -19,23 +14,38 @@ def average(val):
     return sum(prices) / len(prices)
 
 
-def create_positions(key, val):
+def close_orders():
+    pass
+
+
+def create_position(key, val, side):
     a = average(val)
-    print(a)
-    price = round(a - a / 50, PRICE_PRECISION[key])
+    price = round(a + side * a / 100, PRICE_PRECISION[key])
     quantity = round(DEP / price + 1, LOT_SIZE[key])
-    print(quantity)
     return {'symbol': key,
-            'side': 'BUY',
+            'side': 'BUY' if side < 0 else 'SELL',
             'type': 'LIMIT',
             'price': price,
             'quantity': quantity}
 
 
+def create_positions(key, val):
+    orders = []
+    cp.create_position({'symbol': key, 'type': 'CancelOrder'})
+    orders.append(create_position(key, val, 0.6))
+    orders.append(create_position(key, val, -0.6))
+    orders.append(create_position(key, val, 1.6))
+    orders.append(create_position(key, val, -1.6))
+    print(orders)
+    return orders
+
 def strategy(data):
     orders = []
     for key, val in data.items():
-        orders.append(create_positions(key, val))
+        a = create_positions(key, val)
+        for i in a:
+            orders.append(i)
+        print(orders)
     return orders
 
 
@@ -242,5 +252,5 @@ if __name__ == '__main__':
         [1712386560000, '7.1049000', '7.1049000', '7.0975000', '7.1010000', '8273', 1712386619999, '58747.0096000', 267,
          '4006', '28447.5053000', '0']]}
 
-    strategy(data)
+    print(strategy(data))
     # cp.create_position({'symbol': '1000PEPEUSDT', 'side': 'BUY', 'type': 'LIMIT', 'price': 0.0065600, 'quantity': 1400})
