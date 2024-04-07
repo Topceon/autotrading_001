@@ -12,8 +12,8 @@ def get_data_from_market(coin_pair):
     return data
 
 
-def strategy(data):
-    data = sg.strategy(data)
+def strategy(data, balance):
+    data = sg.strategy(data, balance)
     return data
 
 
@@ -22,10 +22,10 @@ def create_position(list_data):
         cp.create_position(data)
 
 
-def run_main_app(coin_pair):
+def run_main_app(coin_pair, balance={}):
     data = get_data_from_market(coin_pair)
     # while True: с задержкой
-    data = strategy(data)
+    data = strategy(data, balance)
     create_position(data)
 
 
