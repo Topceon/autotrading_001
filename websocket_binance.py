@@ -26,7 +26,7 @@ def message_handler(_, message):
     # main_app.run_main_app(COIN_PAIR)
     # time.sleep(30)
     data_2 = json.JSONDecoder().decode(message)
-    # print(data_2)
+    print(data_2)
     if data_2['e'] and data_2['e'] == 'ORDER_TRADE_UPDATE':
         print(data_2['o']['x'])
         if data_2['o']['x'] == 'TRADE':
@@ -34,12 +34,24 @@ def message_handler(_, message):
                 BALANCE[data_2['o']['s']] = -1
             else:
                 BALANCE[data_2['o']['s']] = 1
-    print(BALANCE)
+        main_app.run_main_app(COIN_PAIR, BALANCE)
+    # print(BALANCE)
+
 
 
 api_key = keys.API_key
 client = UMFutures(api_key)
 response = client.new_listen_key()
+
+
+def new_listen_key():
+    global response
+    time.sleep(3500)
+    api_key = keys.API_key
+    client = UMFutures(api_key)
+    response = client.new_listen_key()
+    new_listen_key()
+
 
 # logging.info("Listen key : {}".format(response["listenKey"]))
 
@@ -52,6 +64,6 @@ if __name__ == '__main__':
         id=1
     )
     foo()
-
+    new_listen_key()
     # logging.debug("closing ws connection")
     # ws_client.stop()
