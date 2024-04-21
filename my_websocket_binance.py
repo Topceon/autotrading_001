@@ -1,18 +1,14 @@
+import websocket
+import requests
 import threading
 import time
-import logging
-from binance.lib.utils import config_logging
-from binance.um_futures import UMFutures
-from binance.websocket.um_futures.websocket_client import UMFuturesWebsocketClient
-import keys
 import json
 
+import keys
 import main_app
 
 COIN_PAIR = ['1000PEPEUSDT', 'WLDUSDT']
 BALANCER = {COIN: 0 for COIN in COIN_PAIR}
-
-config_logging(logging, logging.DEBUG)
 
 
 def foo():
@@ -22,10 +18,8 @@ def foo():
 
 def message_handler(_, message):
     global BALANCER
-    # main_app.run_main_app(COIN_PAIR)
-    # time.sleep(30)
     data_2 = json.JSONDecoder().decode(message)
-    print(data_2)
+    # print(data_2)
     if data_2['e'] and data_2['e'] == 'ORDER_TRADE_UPDATE':
         print(data_2['o']['x'])
         if data_2['o']['x'] == 'TRADE':
@@ -33,21 +27,19 @@ def message_handler(_, message):
                 BALANCER[data_2['o']['s']] = -1
             else:
                 BALANCER[data_2['o']['s']] = 1
-        # main_app.run_main_app(COIN_PAIR, BALANCE)
     print(BALANCER)
 
 
-api_key = keys.API_key
-client = UMFutures(api_key)
-response = ''
+listen_key = ''
 
 
 def new_listen_key():
-    global response
-    api_key = keys.API_key
-    client = UMFutures(api_key)
+    global listen_key
+    headers = {'X-MBX-APIKEY': keys.API_key}
     try:
-        response = client.new_listen_key()
+        listen_key = requests.post('https://fapi.binance.com/fapi/v1/listenKey',
+                                   headers=headers)
+        print(listen_key.json())
     except Exception as e:
         print('Проблема ключа', e)
         time.sleep(10)
@@ -55,35 +47,37 @@ def new_listen_key():
 
 
 new_listen_key()
-print(response)
 
 
-# logging.info("Listen key : {}".format(response["listenKey"]))
 def activity():
-    try:
-        ws_client = UMFuturesWebsocketClient(on_message=message_handler)
-        ws_client.user_data(
-            listen_key=response["listenKey"],
-            id=1
-        )
-    except Exception as e:
-        print('Проблема сокета', e)
+    while True:
+        try:
+            ws = websocket.WebSocketApp('wss://fstream.binance.com/ws/' + listen_key.json()['listenKey'],
+                                        on_message=message_handler)
+            ws.run_forever()
+            print('Test')
+            time.sleep(5)
+        except Exception as e:
+            print('Проблема сокета', e)
+            time.sleep(5)
 
 
 def activity1():
-    time.sleep(3500)
-    new_listen_key()
+    while True:
+        time.sleep(3500)
+        new_listen_key()
 
 
 def activity2():
-    foo()
-    time.sleep(300)
+    while True:
+        foo()
+        time.sleep(300)
 
 
 if __name__ == '__main__':
     list1 = [activity,
              activity1,
-             # activity2
+             activity2
              ]
 
     threads = [threading.Thread(target=i, daemon=True) for i in list1]
@@ -91,5 +85,3 @@ if __name__ == '__main__':
         e.start()
     for e in threads:
         e.join()
-    logging.debug("closing ws connection")
-    # ws_client.stop()
