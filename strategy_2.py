@@ -29,23 +29,24 @@ def create_position(key, val, side):
             'quantity': quantity}
 
 
-def create_positions(key, val):
+def create_positions(key, val, balance):
     orders = []
     cp.create_position({'symbol': key, 'type': 'CancelOrder'})
-    orders.append(create_position(key, val, 0.6))
-    orders.append(create_position(key, val, -0.6))
+    if balance[key] <= 0:
+        orders.append(create_position(key, val, 0.6))
+    if balance[key] >= 0:
+        orders.append(create_position(key, val, -0.6))
     orders.append(create_position(key, val, 1.6))
     orders.append(create_position(key, val, -1.6))
-    print(orders)
     return orders
 
-def strategy(data):
+
+def strategy(data, balance):
     orders = []
     for key, val in data.items():
-        a = create_positions(key, val)
+        a = create_positions(key, val, balance)
         for i in a:
             orders.append(i)
-        print(orders)
     return orders
 
 

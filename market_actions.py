@@ -6,6 +6,7 @@ import keys
 BASE_URL = "https://fapi.binance.com"
 klines_url_order = "/fapi/v1/klines"
 url_order = "/fapi/v1/order"
+listen_key = '/fapi/v1/listenKey'
 
 
 def get_timestamp():
@@ -38,15 +39,21 @@ def get_klines(coin):
     return klines
 
 
+def new_listen_key(headers, params):
+    req = requests.post(BASE_URL + listen_key, headers=headers, params=params)
+    return req.json()
+
+
 def create_order(order, headers, params):
     if order['type'] == 'CancelOrder':
         req = requests.delete(BASE_URL + "/fapi/v1/allOpenOrders", headers=headers, params=params)
     else:
         req = requests.post(BASE_URL + url_order, headers=headers, params=params)
-    print(req.json())
+    # print(req.json())
 
 
 if __name__ == '__main__':
     # входящие данные ["BLZUSDT", "AVAXUSDT", "ARBUSDT"]
     # результат {"AVAXUSDT":[время открытия свечи, цена открытия, максимум свечи, минимум свечи, цена закрытия, объем]}
-    print(get_klines("1000PEPEUSDT"))
+    # print(get_klines("1000PEPEUSDT"))
+    print(new_listen_key())

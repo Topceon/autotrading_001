@@ -57,10 +57,19 @@ def create_position(order):
     headers = {'X-MBX-APIKEY': keys.API_key}
     ma.create_order(order, headers, params)
 
+def new_listen_key():
+    params = {
+        'timestamp': ma.get_timestamp()
+    }
+    params['signature'] = signature(params)
+    headers = {'X-MBX-APIKEY': keys.API_key}
+    return ma.new_listen_key(headers, params)
+    # req = requests.get(BASE_URL + listen_key, headers=headers, params=params)
+
 
 if __name__ == '__main__':
     # отложенная заявка срабатывает сразу если цена лучше чем в заявке
-    create_position({'symbol': '1000PEPEUSDT', 'side': 'BUY', 'type': 'LIMIT', 'price': 0.0065600, 'quantity': 1400})
+    # create_position({'symbol': '1000PEPEUSDT', 'side': 'BUY', 'type': 'LIMIT', 'price': 0.0065600, 'quantity': 1400})
     # покупка по маркету
     # create_position({'symbol': 'BLZUSDT', 'side': 'BUY', 'type': 'MARKET', 'quantity': 35})
     # снимает все отложенные заявки для этой пары
@@ -73,3 +82,6 @@ if __name__ == '__main__':
     # проверка аккаунта
     # create_position({'acc': 'acc'})
     # print(query_new_prices())
+    # получить новый listen_key, нужен для websocket
+    print(new_listen_key())
+    # {'listenKey': '3wPkIHlrkeBmJDQvK1qQxRzLQkoaH9UT9OA74C4SlBMlqDzy5xRTzq6zI6zP5blq'}
