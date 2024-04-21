@@ -1,3 +1,4 @@
+import threading
 import time
 import logging
 from binance.lib.utils import config_logging
@@ -9,20 +10,18 @@ import json
 import main_app
 
 COIN_PAIR = ['1000PEPEUSDT', 'WLDUSDT']
-BALANCE = {COIN: 0 for COIN in COIN_PAIR}
+BALANCER = {COIN: 0 for COIN in COIN_PAIR}
 
 
 # config_logging(logging, logging.DEBUG)
 
 def foo():
-    global BALANCE
-    main_app.run_main_app(COIN_PAIR, BALANCE)
-    time.sleep(300)
-    foo()
+    global BALANCER
+    main_app.run_main_app(COIN_PAIR, BALANCER)
 
 
 def message_handler(_, message):
-    global BALANCE
+    global BALANCER
     # main_app.run_main_app(COIN_PAIR)
     # time.sleep(30)
     data_2 = json.JSONDecoder().decode(message)
@@ -31,39 +30,53 @@ def message_handler(_, message):
         print(data_2['o']['x'])
         if data_2['o']['x'] == 'TRADE':
             if data_2['o']['S'] == 'BUY':
-                BALANCE[data_2['o']['s']] = -1
+                BALANCER[data_2['o']['s']] = -1
             else:
-                BALANCE[data_2['o']['s']] = 1
-        main_app.run_main_app(COIN_PAIR, BALANCE)
-    # print(BALANCE)
-
+                BALANCER[data_2['o']['s']] = 1
+        # main_app.run_main_app(COIN_PAIR, BALANCE)
+    print(BALANCER)
 
 
 api_key = keys.API_key
 client = UMFutures(api_key)
 response = client.new_listen_key()
+print(response)
 
 
 def new_listen_key():
     global response
-    time.sleep(3500)
     api_key = keys.API_key
     client = UMFutures(api_key)
     response = client.new_listen_key()
-    new_listen_key()
 
 
 # logging.info("Listen key : {}".format(response["listenKey"]))
-
-
-if __name__ == '__main__':
+def activity():
     ws_client = UMFuturesWebsocketClient(on_message=message_handler)
 
     ws_client.user_data(
         listen_key=response["listenKey"],
         id=1
     )
-    foo()
+
+
+def activity1():
+    time.sleep(3500)
     new_listen_key()
+
+
+def activity2():
+    foo()
+    time.sleep(300)
+
+
+if __name__ == '__main__':
+    list1 = [activity, activity1, activity2]
+
+    threads = [threading.Thread(target=i, daemon=True) for i in list1]
+    for e in threads:
+        e.start()
+    for e in threads:
+        e.join()
     # logging.debug("closing ws connection")
     # ws_client.stop()

@@ -33,9 +33,9 @@ def create_positions(key, val, balance):
     orders = []
     cp.create_position({'symbol': key, 'type': 'CancelOrder'})
     if balance[key] <= 0:
-        orders.append(create_position(key, val, 2.6))
+        orders.append(create_position(key, val, 0.6))
     if balance[key] >= 0:
-        orders.append(create_position(key, val, -2.6))
+        orders.append(create_position(key, val, -0.6))
     orders.append(create_position(key, val, 1.6))
     orders.append(create_position(key, val, -1.6))
     return orders
