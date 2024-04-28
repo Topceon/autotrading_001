@@ -74,15 +74,17 @@ def activity2():
         time.sleep(300)
 
 
-if __name__ == '__main__':
-    list1 = [activity,
-             activity1,
-             activity2
-             ]
+list1 = [activity,
+         activity1,
+         activity2
+         ]
 
-    threads = [threading.Thread(target=i, daemon=True) for i in list1]
-    for e in threads:
-        e.start()
-    for e in threads:
-        e.join()
-        #222
+threads = [threading.Thread(target=i, daemon=True) for i in list1]
+for e in threads:
+    e.start()
+for e in threads:
+    e.join()
+    #222
+
+if __name__ == '__main__':
+    pass
