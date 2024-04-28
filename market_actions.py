@@ -1,4 +1,6 @@
 import time
+import uuid
+
 import requests
 
 import keys
@@ -13,13 +15,6 @@ def get_timestamp():
     return str(int(time.time() * 1000))
 
 
-def get_deposit_size():
-    """Запрашиваем размер депозита на бирже
-    размер должен быть в долларовом эквиваленте"""
-    # TODO исправить захардкоженный вариант после отработки работоспособности других функций
-    return 10
-
-
 def query_new_prices() -> dict:
     resp = requests.get('https://fapi.binance.com/fapi/v1/ticker/price')
     a = resp.json()
@@ -31,7 +26,7 @@ def get_klines(coin):
     params = {
         'symbol': coin,
         'interval': '1m',
-        'limit': 50
+        'limit': 499
     }
     headers = {'X-MBX-APIKEY': keys.API_key}
     req = requests.get(BASE_URL + klines_url_order, headers=headers, params=params)
@@ -45,15 +40,27 @@ def new_listen_key(headers, params):
 
 
 def create_order(order, headers, params):
-    if order['type'] == 'CancelOrder':
-        req = requests.delete(BASE_URL + "/fapi/v1/allOpenOrders", headers=headers, params=params)
-    else:
-        req = requests.post(BASE_URL + url_order, headers=headers, params=params)
-    # print(req.json())
+    req = requests.post(BASE_URL + url_order, headers=headers, params=params)
+    return req.json()
+
+
+def del_orders(headers, params):
+    req = requests.delete(BASE_URL + "/fapi/v1/allOpenOrders", headers=headers, params=params)
+    return req.json()
+
+
+def get_acc_info(order, headers, params):
+    req = requests.get(BASE_URL + "/fapi/v1/openOrders", headers=headers, params=params)
+    return req.json()
+
+
+def get_acc_balace(headers, params):
+    req = requests.get(BASE_URL + "/fapi/v2/account", headers=headers, params=params)
+    return req.json()
 
 
 if __name__ == '__main__':
     # входящие данные ["BLZUSDT", "AVAXUSDT", "ARBUSDT"]
     # результат {"AVAXUSDT":[время открытия свечи, цена открытия, максимум свечи, минимум свечи, цена закрытия, объем]}
-    # print(get_klines("1000PEPEUSDT"))
-    print(new_listen_key())
+    print(get_klines("1000PEPEUSDT"))
+    # print(get_acc_info())

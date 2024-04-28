@@ -55,7 +55,10 @@ def create_position(order):
 
     params['signature'] = signature(params)
     headers = {'X-MBX-APIKEY': keys.API_key}
-    ma.create_order(order, headers, params)
+    if order['type'] == 'CancelOrder':
+        return ma.del_orders(headers, params)
+    return ma.create_order(order, headers, params)
+
 
 def new_listen_key():
     params = {
@@ -64,24 +67,73 @@ def new_listen_key():
     params['signature'] = signature(params)
     headers = {'X-MBX-APIKEY': keys.API_key}
     return ma.new_listen_key(headers, params)
-    # req = requests.get(BASE_URL + listen_key, headers=headers, params=params)
+
+
+def close_order_with_id(order_id):
+    pass
+
+
+def get_acc_info(order):
+    params = {
+        'symbol': order['symbol'],
+        'timestamp': ma.get_timestamp()
+    }
+
+    params['signature'] = signature(params)
+    headers = {'X-MBX-APIKEY': keys.API_key}
+    return ma.get_acc_info(order, headers, params)
+
+
+def get_unrealized_profit():
+    params = {
+        'timestamp': ma.get_timestamp()
+    }
+
+    params['signature'] = signature(params)
+    headers = {'X-MBX-APIKEY': keys.API_key}
+
+    for i in get_acc_balace()['positions']:
+        if i['unrealizedProfit'] != '0.00000000':
+            print(i['symbol'], i['unrealizedProfit'])
+    return ma.get_acc_balace(headers, params)
+
+
+def get_acc_balace():
+    params = {
+        'timestamp': ma.get_timestamp()
+    }
+
+    params['signature'] = signature(params)
+    headers = {'X-MBX-APIKEY': keys.API_key}
+    all_info = ma.get_acc_balace(headers, params)
+    for i in all_info['assets']:
+        if i['asset'] == 'USDT':
+            return i['walletBalance']
 
 
 if __name__ == '__main__':
     # отложенная заявка срабатывает сразу если цена лучше чем в заявке
-    # create_position({'symbol': '1000PEPEUSDT', 'side': 'BUY', 'type': 'LIMIT', 'price': 0.0065600, 'quantity': 1400})
+    # print(create_position({'symbol': '1000PEPEUSDT', 'side': 'BUY', 'type': 'LIMIT', 'price': 0.0073600, 'quantity': 1400}))
+
     # покупка по маркету
     # create_position({'symbol': 'BLZUSDT', 'side': 'BUY', 'type': 'MARKET', 'quantity': 35})
+
     # снимает все отложенные заявки для этой пары
-    # create_position({'symbol':'BLZUSDT', 'type': 'CancelOrder'})
+    # print(create_position({'symbol':'1000PEPEUSDT', 'type': 'CancelOrder'}))
+
     # закрывает ордер по указанной цене, если позиция SELL то и STOP_MARKET в плюс SELL а в минус BUY
     # закрывает ордер по указанной цене, если позиция BUY то и STOP_MARKET в плюс BUY а в минус SELL
-    # create_position({'symbol':'BLZUSDT', 'type': 'STOP_MARKET', 'stopprice': 0.357, 'side': 'BUY', 'closePosition': 'true', 'quantity': 'Close-All'})
+    # print(create_position({'symbol': '1000PEPEUSDT', 'type': 'STOP_MARKET', 'stopprice': 0.357, 'side': 'BUY', 'closePosition': 'true', 'quantity': 'Close-All'}))
+
     # увеличивает позицию отложкой по целевой цене если дано quantity, closePosition не равно true
-    # create_position({'symbol': '1000PEPEUSDT', 'type': 'STOP_MARKET', 'side': 'SELL', 'stopprice': 0.0068600, 'quantity': 1400})
+    # print(create_position({'symbol': '1000PEPEUSDT', 'type': 'STOP_MARKET', 'side': 'BUY', 'stopprice': 0.0078000, 'quantity': 1400}))
+
     # проверка аккаунта
     # create_position({'acc': 'acc'})
     # print(query_new_prices())
+
     # получить новый listen_key, нужен для websocket
-    print(new_listen_key())
-    # {'listenKey': '3wPkIHlrkeBmJDQvK1qQxRzLQkoaH9UT9OA74C4SlBMlqDzy5xRTzq6zI6zP5blq'}
+    # print(new_listen_key())
+
+    print(get_acc_balace())
+    print("")
