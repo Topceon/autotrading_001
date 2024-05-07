@@ -84,7 +84,6 @@ for e in threads:
     e.start()
 for e in threads:
     e.join()
-    #222
 
 if __name__ == '__main__':
     pass

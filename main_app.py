@@ -1,7 +1,6 @@
 import get_data_from_market as dm
 import strategy_2 as sg
 import create_position as cp
-import market_actions as ma
 
 COIN_PAIR = ['1000PEPEUSDT', 'WLDUSDT']
 POSITION_SIZE = 10  # размер позиции в процентах от депозита
@@ -12,21 +11,20 @@ def get_data_from_market(coin_pair):
     return data
 
 
-def strategy(data, balance):
-    data = sg.strategy(data, balance)
+def strategy(data, balancer):
+    data = sg.strategy(data, balancer)
     return data
 
 
-def create_position(list_data):
+def create_positions(list_data):
     for data in list_data:
         cp.create_position(data)
 
 
-def run_main_app(coin_pair, balance={}):
+def run_main_app(coin_pair, balancer={}):
     data = get_data_from_market(coin_pair)
-    # while True: с задержкой
-    data = strategy(data, balance)
-    create_position(data)
+    list_data = strategy(data, balancer)
+    create_positions(list_data)
 
 
 if __name__ == '__main__':
