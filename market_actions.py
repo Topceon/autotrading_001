@@ -48,6 +48,9 @@ def del_orders(headers, params):
     req = requests.delete(BASE_URL + "/fapi/v1/allOpenOrders", headers=headers, params=params)
     return req.json()
 
+def del_order(headers, params):
+    req = requests.delete(BASE_URL + "/fapi/v1/order", headers=headers, params=params)
+    return req.json()
 
 def get_acc_info(order, headers, params):
     req = requests.get(BASE_URL + "/fapi/v1/openOrders", headers=headers, params=params)

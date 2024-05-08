@@ -69,8 +69,16 @@ def new_listen_key():
     return ma.new_listen_key(headers, params)
 
 
-def close_order_with_id(order_id):
-    pass
+def close_order_with_id(coin, order_id):
+    params = {
+        'symbol': coin,
+        'orderid': order_id,
+        'timestamp': ma.get_timestamp()
+    }
+
+    params['signature'] = signature(params)
+    headers = {'X-MBX-APIKEY': keys.API_key}
+    return ma.del_order(headers, params)
 
 
 def get_acc_info(order):
@@ -135,5 +143,5 @@ if __name__ == '__main__':
     # получить новый listen_key, нужен для websocket
     # print(new_listen_key())
 
-    print(get_acc_balace())
+    print(close_order_with_id('1000PEPEUSDT', '8741814116'))
     print("")

@@ -5,45 +5,76 @@ import time
 import json
 
 import keys
-import main_app as rv
 import market_actions as ma
-import strategy_2 as s2
+import create_position as cp
 
 COIN_PAIRS = ['1000PEPEUSDT', 'WLDUSDT']
-BALANCER = {COIN: 0 for COIN in COIN_PAIRS}
-BAND_SIZE = [1, 5, 10]
+BAND_SIZE = [1, 3, 5]
+PRICE_PRECISION = {'1000PEPEUSDT': 7, 'WLDUSDT': 4}
+LOT_SIZE = {'1000PEPEUSDT': 1, 'WLDUSDT': 1}
 
 
 class Variant:
-    def __init__(self, coin_pair, band_size):
+    def __init__(self, coin_pair, band_size, prise_precision, lot_size):
         self.balancer = 0
         self.coin_pair = coin_pair
         self.band_size = band_size
-        self.max_position = 0
-        self.min_position = 0
+        self.sell_position = 99999999
+        self.buy_position = 0
         self.id_positions = []
+        self.lot_size = lot_size
+        self.prise_precision = prise_precision
+        self.lot_size_precision = self.lot_size_precision()
 
-    def create_positions(self):  # создает первые две позиции на расстоянии 5 процентов от цены при первом запуске
+    def lot_size_precision(self):
+        str_precision = str(self.lot_size)
+        return str_precision.count('0')
+
+    def create_positions(self):  # создает две позиции на расстоянии band_size процентов от цены
+        for i in self.id_positions:
+            cp.close_order_with_id(self.coin_pair, i)
+        self.id_positions = []
         if self.balancer <= 0:
-            s2.create_position(self.coin_pair, self.max_position, 1)
+            quantity = round(int(10 / self.sell_position) + self.lot_size, self.lot_size_precision)
+            order = cp.create_position({'symbol': self.coin_pair,
+                                        'side': 'SELL',
+                                        'type': 'LIMIT',
+                                        'price': self.sell_position,
+                                        'quantity': quantity})
+            self.id_positions.append(order['orderId'])
         if self.balancer >= 0:
-            s2.create_position(self.coin_pair, self.min_position, -1)
+            quantity = round(int(10 / self.sell_position) + self.lot_size, self.lot_size_precision)
+            order = cp.create_position({'symbol': self.coin_pair,
+                                        'side': 'BUY',
+                                        'type': 'LIMIT',
+                                        'price': self.buy_position,
+                                        'quantity': quantity})
+            self.id_positions.append(order['orderId'])
+        print(self.id_positions, self.balancer)
 
-    def recreate_positions(self):  # при срабатывании верхней лимитки выставляется нижняя и наоборот
-        pass
+    def klines(self, kline):  # [время открытия, цена открытия, максимум свечи, минимум свечи, цена закрытия, объем]
+        if self.sell_position > float(kline[4]) * ((100 + self.band_size) / 100):  # цена минимума свечи [4]
+            self.sell_position = float(kline[4]) * ((100 + self.band_size) / 100)
+            self.sell_position = round(self.sell_position, self.prise_precision)
+        if self.buy_position < float(kline[2]) * ((100 - self.band_size) / 100):  # цена максимума свечи [2]
+            self.buy_position = float(kline[2]) * ((100 - self.band_size) / 100)
+            self.buy_position = round(self.buy_position, self.prise_precision)
 
-    def moving_band(self):  # двигает цены лимиток на 5 процентов от пиковых значений за последнее время
-        pass
+    def change_balanser(self, order):  # при срабатывании верхней лимитки выставляется нижняя и наоборот
+        if order == 'BUY':
+            self.balancer = -1
+        else:
+            self.balancer = 1
+        print(self.balancer)
+        self.create_positions()
 
-    def klines(self, kline):  # достает последнюю свечу с биржи
-        print(kline)
 
 
 all_vars = []
 
 for i in COIN_PAIRS:
     for j in BAND_SIZE:
-        j = Variant(i, j)
+        j = Variant(i, j, PRICE_PRECISION[i], LOT_SIZE[i])
         all_vars.append(j)
 
 
@@ -60,24 +91,24 @@ def options_for_functions(foo, sec, args, after=True):
 def begin_all_vars():
     prices = {}
     for coin in COIN_PAIRS:
-        prices[coin] = ma.get_klines(coin)
+        cp.create_position({'symbol': coin, 'type': 'CancelOrder'})
+        prices[coin] = ma.get_klines(coin)[-1]
     for j in all_vars:
         j.klines(prices[j.coin_pair])
-        j.create_positions()
+        # j.create_positions()
 
 
 def message_handler(_, message):
-    global BALANCER
     data_2 = json.JSONDecoder().decode(message)
     # print(data_2)
     if data_2['e'] and data_2['e'] == 'ORDER_TRADE_UPDATE':
-        print(data_2['o']['x'])
+        print(data_2['o']['i'])
         if data_2['o']['x'] == 'TRADE':
-            if data_2['o']['S'] == 'BUY':
-                BALANCER[data_2['o']['s']] = -1
-            else:
-                BALANCER[data_2['o']['s']] = 1
-    print(BALANCER)
+            for i in all_vars:
+                print(data_2['o']['i'], i.id_positions, data_2['o']['S'])
+                if data_2['o']['i'] in i.id_positions:
+                    i.change_balanser(data_2['o']['S'])
+                    print('соответствуют')
 
 
 listen_key = ''
@@ -117,19 +148,20 @@ def renew_listen_key():
 
 
 def start_all_vars():
-    options_for_functions(begin_all_vars, 60, [COIN_PAIRS, BALANCER])
+    options_for_functions(begin_all_vars, 60, [])
 
 
 functions_for_start = [start_ws,
-                       renew_listen_key,
-                       start_all_vars
+                       start_all_vars,
+                       renew_listen_key
                        ]
 
-# threads = [threading.Thread(target=i, daemon=True) for i in functions_for_start]
-# for e in threads:
-#     e.start()
-# for e in threads:
-#     e.join()
+threads = [threading.Thread(target=i, daemon=True) for i in functions_for_start]
+for e in threads:
+    e.start()
+for e in threads:
+    e.join()
 
 if __name__ == '__main__':
-    begin_all_vars()
+    pass
+    # begin_all_vars()

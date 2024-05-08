@@ -5,15 +5,20 @@ import time
 import json
 
 import keys
-import main_app
+import main_app as rv
 
 COIN_PAIR = ['1000PEPEUSDT', 'WLDUSDT']
 BALANCER = {COIN: 0 for COIN in COIN_PAIR}
 
 
-def foo():
-    global BALANCER
-    main_app.run_main_app(COIN_PAIR, BALANCER)
+def options_for_functions(foo, sec, args, after=True):
+    while True:
+        if after:
+            foo(*args)
+            time.sleep(sec)
+        else:
+            time.sleep(sec)
+            foo(*args)
 
 
 def message_handler(_, message):
@@ -48,8 +53,10 @@ def new_listen_key():
 
 new_listen_key()
 
+list_of_function = []
 
-def activity():
+
+def start_ws():
     while True:
         try:
             ws = websocket.WebSocketApp('wss://fstream.binance.com/ws/' + listen_key.json()['listenKey'],
@@ -62,28 +69,29 @@ def activity():
             time.sleep(5)
 
 
-def activity1():
-    while True:
-        time.sleep(3500)
-        new_listen_key()
+def renew_listen_key():
+    options_for_functions(new_listen_key, 3500, [], after=False)
 
 
-def activity2():
-    while True:
-        foo()
-        time.sleep(300)
+def start_strategy_2():
+    options_for_functions(rv.run_main_app, 300, [COIN_PAIR, BALANCER])
 
 
-list1 = [activity,
-         activity1,
-         activity2
-         ]
+def start_strategy_3():
+    options_for_functions(rv.run_variation, 30, ['test', 23])
 
-threads = [threading.Thread(target=i, daemon=True) for i in list1]
-for e in threads:
-    e.start()
-for e in threads:
-    e.join()
+
+functions_for_start = [start_ws,
+                       renew_listen_key,
+                       start_strategy_2,
+                       start_strategy_3
+                       ]
+
+# threads = [threading.Thread(target=i, daemon=True) for i in functions_for_start]
+# for e in threads:
+#     e.start()
+# for e in threads:
+#     e.join()
 
 if __name__ == '__main__':
-    pass
+    start_strategy_3()
