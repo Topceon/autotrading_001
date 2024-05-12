@@ -9,7 +9,7 @@ import market_actions as ma
 import create_position as cp
 
 COIN_PAIRS = ['1000PEPEUSDT', 'WLDUSDT']
-BAND_SIZE = [1, 3, 5]
+BAND_SIZE = [2, 3.9, 5.7, 7.4, 9, 10.5, 11.9, 13.2, 14.4, 15.5, 16.5]
 PRICE_PRECISION = {'1000PEPEUSDT': 7, 'WLDUSDT': 4}
 LOT_SIZE = {'1000PEPEUSDT': 1, 'WLDUSDT': 1}
 
@@ -21,7 +21,8 @@ class Variant:
         self.band_size = band_size
         self.sell_position = 99999999
         self.buy_position = 0
-        self.id_positions = []
+        self.id_sell_positions = None
+        self.id_buy_positions = None
         self.lot_size = lot_size
         self.prise_precision = prise_precision
         self.lot_size_precision = self.lot_size_precision()
@@ -30,44 +31,66 @@ class Variant:
         str_precision = str(self.lot_size)
         return str_precision.count('0')
 
-    def create_positions(self):  # создает две позиции на расстоянии band_size процентов от цены
-        for i in self.id_positions:
-            cp.close_order_with_id(self.coin_pair, i)
-        self.id_positions = []
+    def create_sell_position(self):  # создает две позиции на расстоянии band_size процентов от цены
         if self.balancer <= 0:
+            print('Создаем новую заявку')
             quantity = round(int(10 / self.sell_position) + self.lot_size, self.lot_size_precision)
             order = cp.create_position({'symbol': self.coin_pair,
                                         'side': 'SELL',
                                         'type': 'LIMIT',
                                         'price': self.sell_position,
                                         'quantity': quantity})
-            self.id_positions.append(order['orderId'])
+            print(order)
+            self.id_sell_positions = order['orderId']
+
+    def create_buy_position(self):
         if self.balancer >= 0:
+            print('Создаем новую заявку')
             quantity = round(int(10 / self.sell_position) + self.lot_size, self.lot_size_precision)
             order = cp.create_position({'symbol': self.coin_pair,
                                         'side': 'BUY',
                                         'type': 'LIMIT',
                                         'price': self.buy_position,
                                         'quantity': quantity})
-            self.id_positions.append(order['orderId'])
-        print(self.id_positions, self.balancer)
+            print(order)
+            self.id_buy_positions = order['orderId']
 
     def klines(self, kline):  # [время открытия, цена открытия, максимум свечи, минимум свечи, цена закрытия, объем]
         if self.sell_position > float(kline[4]) * ((100 + self.band_size) / 100):  # цена минимума свечи [4]
             self.sell_position = float(kline[4]) * ((100 + self.band_size) / 100)
             self.sell_position = round(self.sell_position, self.prise_precision)
+            if self.id_sell_positions != None:
+                cp.close_order_with_id(self.coin_pair, self.id_sell_positions)
+                print('Удаляем заявку по id')
+            self.create_sell_position()
         if self.buy_position < float(kline[2]) * ((100 - self.band_size) / 100):  # цена максимума свечи [2]
             self.buy_position = float(kline[2]) * ((100 - self.band_size) / 100)
             self.buy_position = round(self.buy_position, self.prise_precision)
+            if self.id_buy_positions != None:
+                cp.close_order_with_id(self.coin_pair, self.id_buy_positions)
+                print('Удаляем заявку по id')
+            self.create_buy_position()
+        print(self.balancer)
 
     def change_balanser(self, order):  # при срабатывании верхней лимитки выставляется нижняя и наоборот
         if order == 'BUY':
             self.balancer = -1
+            self.id_buy_positions = None
+            self.sell_position = self.buy_position * ((100 + self.band_size) / 100)
+            self.sell_position = round(self.sell_position, self.prise_precision)
+            if self.id_sell_positions != None:
+                cp.close_order_with_id(self.coin_pair, self.id_sell_positions)
+            self.create_sell_position()
         else:
             self.balancer = 1
-        print(self.balancer)
-        self.create_positions()
-
+            self.id_sell_positions = None
+            self.buy_position = self.sell_position * ((100 - self.band_size) / 100)
+            self.buy_position = round(self.buy_position, self.prise_precision)
+            if self.id_buy_positions != None:
+                cp.close_order_with_id(self.coin_pair, self.id_buy_positions)
+            self.create_buy_position()
+        print('Изменяем баланс')
+        # self.klines(ma.get_klines(self.coin_pair)[-1])
 
 
 all_vars = []
@@ -91,11 +114,10 @@ def options_for_functions(foo, sec, args, after=True):
 def begin_all_vars():
     prices = {}
     for coin in COIN_PAIRS:
-        cp.create_position({'symbol': coin, 'type': 'CancelOrder'})
+        # cp.create_position({'symbol': coin, 'type': 'CancelOrder'})
         prices[coin] = ma.get_klines(coin)[-1]
     for j in all_vars:
         j.klines(prices[j.coin_pair])
-        # j.create_positions()
 
 
 def message_handler(_, message):
@@ -105,8 +127,8 @@ def message_handler(_, message):
         print(data_2['o']['i'])
         if data_2['o']['x'] == 'TRADE':
             for i in all_vars:
-                print(data_2['o']['i'], i.id_positions, data_2['o']['S'])
-                if data_2['o']['i'] in i.id_positions:
+                # print(data_2['o']['i'], data_2['o']['S'])
+                if data_2['o']['i'] == i.id_sell_positions or data_2['o']['i'] == i.id_buy_positions:
                     i.change_balanser(data_2['o']['S'])
                     print('соответствуют')
 
