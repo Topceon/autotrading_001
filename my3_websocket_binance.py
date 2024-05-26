@@ -43,7 +43,7 @@ class Variant:
             return order['orderId']
         except Exception as e:
             print('заявка не сработала', e)
-            self.create_position(price, side)
+            # self.create_position(price, side)
 
     def create_all_positions(self, kline):  # [время открытия, открытие, максимум свечи, минимум свечи, закрытие, объем]
         top_price = float(kline[2])
@@ -131,9 +131,11 @@ def begin_all_vars():
 
 def message_handler(_, message):
     data_2 = json.JSONDecoder().decode(message)
+    print("message")
     if data_2['e'] and data_2['e'] == 'ORDER_TRADE_UPDATE':
         side = data_2['o']['S']
         order_id = data_2['o']['i']
+        print(order_id, side)
         if data_2['o']['x'] == 'TRADE':
             for i in all_vars:
                 if order_id in i.id_buy_positions or order_id in i.id_sell_positions:

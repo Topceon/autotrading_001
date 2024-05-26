@@ -24,7 +24,7 @@ def options_for_functions(foo, sec, args, after=True):
 def message_handler(_, message):
     global BALANCER
     data_2 = json.JSONDecoder().decode(message)
-    # print(data_2)
+    print(data_2)
     if data_2['e'] and data_2['e'] == 'ORDER_TRADE_UPDATE':
         print(data_2['o']['x'])
         if data_2['o']['x'] == 'TRADE':
@@ -59,7 +59,7 @@ list_of_function = []
 def start_ws():
     while True:
         try:
-            ws = websocket.WebSocketApp('wss://fstream.binance.com/ws/' + listen_key.json()['listenKey'],
+            ws = websocket.WebSocketApp('wss://fstream.binance.com/stream?streams=bnbusdt@aggTrade/btcusdt@markPrice',
                                         on_message=message_handler)
             ws.run_forever()
             print('Test')
@@ -82,16 +82,14 @@ def start_strategy_3():
 
 
 functions_for_start = [start_ws,
-                       renew_listen_key,
-                       start_strategy_2,
-                       start_strategy_3
+                       renew_listen_key
                        ]
 
-# threads = [threading.Thread(target=i, daemon=True) for i in functions_for_start]
-# for e in threads:
-#     e.start()
-# for e in threads:
-#     e.join()
+threads = [threading.Thread(target=i, daemon=True) for i in functions_for_start]
+for e in threads:
+    e.start()
+for e in threads:
+    e.join()
 
 if __name__ == '__main__':
-    start_strategy_3()
+    pass
