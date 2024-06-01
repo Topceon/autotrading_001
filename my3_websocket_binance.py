@@ -8,12 +8,13 @@ import keys
 import market_actions as ma
 import create_position as cp
 
+DIAPASON = [1, 2, 0.1] # [конечный процент, начальный процент, разница между ставками]
 COIN_PAIRS = ['1000PEPEUSDT', 'WLDUSDT']
-BAND_SIZE = [2, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1]
 PRICE_PRECISION = {'1000PEPEUSDT': 7, 'WLDUSDT': 4}
 LOT_SIZE = {'1000PEPEUSDT': 1, 'WLDUSDT': 1}
 
 
+BAND_SIZE = list(reversed([i / 10 for i in range(DIAPASON[0] * 10, DIAPASON[1] * 10 + 1, DIAPASON[2] * 10)]))
 class Variant:
     def __init__(self, coin_pair, prise_precision, lot_size):
         self.balancer = [0 for _ in BAND_SIZE]
@@ -181,7 +182,7 @@ def renew_listen_key():
 
 
 def start_all_vars():
-    options_for_functions(begin_all_vars, 10, [])
+    options_for_functions(begin_all_vars, 60, [])
 
 
 functions_for_start = [start_ws,
