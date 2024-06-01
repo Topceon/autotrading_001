@@ -8,7 +8,7 @@ import keys
 import market_actions as ma
 import create_position as cp
 
-DIAPASON = [1, 2, 0.1] # [конечный процент, начальный процент, разница между ставками]
+DIAPASON = [1, 2, 0.1]  # [конечный процент, начальный процент, разница между ставками]
 COIN_PAIRS = ['1000PEPEUSDT', 'WLDUSDT']
 PRICE_PRECISION = {'1000PEPEUSDT': 7, 'WLDUSDT': 4}
 LOT_SIZE = {'1000PEPEUSDT': 1, 'WLDUSDT': 1}
@@ -16,8 +16,9 @@ BALANCE_PESETAGE = 10
 BALANCE = 10
 DEEP_ORDERS = 3
 
-
 BAND_SIZE = list(reversed([i / 10 for i in range(DIAPASON[0] * 10, DIAPASON[1] * 10 + 1, int(DIAPASON[2] * 10))]))
+
+
 class Variant:
     def __init__(self, coin_pair, prise_precision, lot_size):
         self.balancer = [0 for _ in BAND_SIZE]
@@ -50,51 +51,60 @@ class Variant:
             print('заявка не сработала', e)
             # self.create_position(price, side)
 
+    def order_buy_positions(self):
+        deep_buys = DEEP_ORDERS
+        for i in range(len(self.balancer)):
+            if self.balancer[i] >= 0:
+                if deep_buys:
+                    deep_buys -= 1
+                else:
+                    break
+                if self.id_buy_positions[i] is not None:
+                    cp.close_order_with_id(self.coin_pair, self.id_buy_positions[i])
+                order_id = self.create_position(self.buy_prices[i], "BUY")
+                self.id_buy_positions[i] = order_id
+
+    def order_sell_positions(self):
+        deep_sell = DEEP_ORDERS
+        for i in range(len(self.balancer)):
+            if self.balancer[i] <= 0:
+                if deep_sell:
+                    deep_sell -= 1
+                else:
+                    break
+                if self.id_sell_positions[i] is not None:
+                    cp.close_order_with_id(self.coin_pair, self.id_sell_positions[i])
+                order_id = self.create_position(self.sell_prices[i], "SELL")
+                self.id_sell_positions[i] = order_id
+
     def create_all_positions(self, kline):  # [время открытия, открытие, максимум свечи, минимум свечи, закрытие, объем]
         top_price = float(kline[2])
         bottom_price = float(kline[3])
         buy_price = round(top_price * ((100 - self.band_size[0]) / 100), self.prise_precision)
         sell_price = round(bottom_price * ((100 + self.band_size[0]) / 100), self.prise_precision)
-        deep_sells = DEEP_ORDERS
-        deep_buys = DEEP_ORDERS
 
         if buy_price > self.buy_prices[0] or self.rebalanser == 1:
             self.rebalanser = 0
+            self.buy_prices = []
             for i in range(len(self.balancer)):
-                if deep_buys:
-                    deep_buys -= 1
-                else:
-                    break
                 if self.balancer[i] >= 0:
                     buy_price = round(top_price * ((100 - self.band_size[i]) / 100), self.prise_precision)
 
-                    if self.id_buy_positions[i] is not None:
-                        cp.close_order_with_id(self.coin_pair, self.id_buy_positions[i])
-
-                    self.buy_prices[i] = buy_price
+                    self.buy_prices.append(buy_price)
                     top_price = buy_price
-                    order_id = self.create_position(buy_price, 'BUY')
-                    self.id_buy_positions[i] = order_id
+            self.order_buy_positions()
 
         if sell_price < self.sell_prices[0] or self.rebalanser == -1:
             self.rebalanser = 0
+            self.sell_prices = []
             for i in range(len(self.balancer)):
-                if deep_sells:
-                    deep_sells -= 1
-                else:
-                    break
                 if self.balancer[i] <= 0:
-
                     sell_price = round(bottom_price * ((100 + self.band_size[i]) / 100), self.prise_precision)
 
-                    if self.id_sell_positions[i] is not None:
-                        cp.close_order_with_id(self.coin_pair, self.id_sell_positions[i])
-                        self.id_sell_positions[i] = None
-
-                    self.sell_prices[i] = sell_price
+                    self.sell_prices.append(sell_price)
                     bottom_price = sell_price
-                    order_id = self.create_position(sell_price, 'SELL')
-                    self.id_sell_positions[i] = order_id
+            self.order_sell_positions()
+
 
     def change_balanser(self, orderid, side):
         if side == 'BUY':
@@ -102,11 +112,13 @@ class Variant:
             self.rebalanser = -1 if order_index == 0 else 0
             self.balancer[order_index] = -1
             self.id_buy_positions[order_index] = None
+            self.order_buy_positions()
         else:
             order_index = self.id_sell_positions.index(orderid)
             self.rebalanser = 1 if order_index == 0 else 0
             self.balancer[order_index] = 1
             self.id_sell_positions[order_index] = None
+            self.order_sell_positions()
         print('Изменяем баланс', self.coin_pair, self.balancer)
 
 
