@@ -58,8 +58,13 @@ def get_acc_info(order, headers, params):
 
 
 def get_acc_balace(headers, params):
-    req = requests.get(BASE_URL + "/fapi/v2/account", headers=headers, params=params)
-    return req.json()
+    try:
+        req = requests.get(BASE_URL + "/fapi/v2/account", headers=headers, params=params)
+        return req.json()
+    except Exception as e:
+        print(e)
+        time.sleep(10)
+        get_acc_balace(headers, params)
 
 
 if __name__ == '__main__':

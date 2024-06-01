@@ -12,9 +12,11 @@ DIAPASON = [1, 2, 0.1] # [конечный процент, начальный п
 COIN_PAIRS = ['1000PEPEUSDT', 'WLDUSDT']
 PRICE_PRECISION = {'1000PEPEUSDT': 7, 'WLDUSDT': 4}
 LOT_SIZE = {'1000PEPEUSDT': 1, 'WLDUSDT': 1}
+BALANCE_PESETAGE = 10
+BALANCE = 10
 
 
-BAND_SIZE = list(reversed([i / 10 for i in range(DIAPASON[0] * 10, DIAPASON[1] * 10 + 1, DIAPASON[2] * 10)]))
+BAND_SIZE = list(reversed([i / 10 for i in range(DIAPASON[0] * 10, DIAPASON[1] * 10 + 1, int(DIAPASON[2] * 10))]))
 class Variant:
     def __init__(self, coin_pair, prise_precision, lot_size):
         self.balancer = [0 for _ in BAND_SIZE]
@@ -34,7 +36,7 @@ class Variant:
         return str_precision.count('0')
 
     def create_position(self, price, side):
-        quantity = round(int(10 / price) + self.lot_size, self.lot_size_precision)
+        quantity = round(int(BALANCE / BALANCE_PESETAGE / price) + self.lot_size, self.lot_size_precision)
         try:
             order = cp.create_position({'symbol': self.coin_pair,
                                         'side': side,
@@ -124,6 +126,9 @@ def kline_try(coin):
 
 
 def begin_all_vars():
+    global BALANCE
+    BALANCE = float(cp.get_acc_balace())
+    print(BALANCE)
     prices = {}
     for coin in COIN_PAIRS:
         prices[coin] = kline_try(coin)
