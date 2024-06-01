@@ -8,7 +8,7 @@ import keys
 import market_actions as ma
 import create_position as cp
 
-DIAPASON = [1, 2, 0.1]  # [конечный процент, начальный процент, разница между ставками]
+DIAPASON = [1, 3, 0.1]  # [конечный процент, начальный процент, разница между ставками]
 COIN_PAIRS = ['1000PEPEUSDT', 'WLDUSDT']
 PRICE_PRECISION = {'1000PEPEUSDT': 7, 'WLDUSDT': 4}
 LOT_SIZE = {'1000PEPEUSDT': 1, 'WLDUSDT': 1}
@@ -163,11 +163,9 @@ def begin_all_vars():
 
 def message_handler(_, message):
     data_2 = json.JSONDecoder().decode(message)
-    print("message")
     if data_2['e'] and data_2['e'] == 'ORDER_TRADE_UPDATE':
         side = data_2['o']['S']
         order_id = data_2['o']['i']
-        print(order_id, side)
         if data_2['o']['x'] == 'TRADE':
             for i in all_vars:
                 if order_id in i.id_buy_positions or order_id in i.id_sell_positions:
