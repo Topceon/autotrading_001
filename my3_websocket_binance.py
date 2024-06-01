@@ -42,6 +42,7 @@ class Variant:
                                         'quantity': quantity})
             return order['orderId']
         except Exception as e:
+            time.sleep(2)
             print('заявка не сработала', e)
             # self.create_position(price, side)
 
@@ -92,7 +93,7 @@ class Variant:
             self.rebalanser = 1 if order_index == 0 else 0
             self.balancer[order_index] = 1
             self.id_sell_positions[order_index] = None
-        print('Изменяем баланс',self.coin_pair, self.balancer)
+        print('Изменяем баланс', self.coin_pair, self.balancer)
 
 
 all_vars = []
@@ -125,6 +126,8 @@ def begin_all_vars():
     prices = {}
     for coin in COIN_PAIRS:
         prices[coin] = kline_try(coin)
+        if prices[coin] is None:
+            prices[coin] = kline_try(coin)
     for i in all_vars:
         i.create_all_positions(prices[i.coin_pair])
 
@@ -178,7 +181,7 @@ def renew_listen_key():
 
 
 def start_all_vars():
-    options_for_functions(begin_all_vars, 60, [])
+    options_for_functions(begin_all_vars, 10, [])
 
 
 functions_for_start = [start_ws,
