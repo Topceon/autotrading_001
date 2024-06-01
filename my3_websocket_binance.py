@@ -14,6 +14,7 @@ PRICE_PRECISION = {'1000PEPEUSDT': 7, 'WLDUSDT': 4}
 LOT_SIZE = {'1000PEPEUSDT': 1, 'WLDUSDT': 1}
 BALANCE_PESETAGE = 10
 BALANCE = 10
+DEEP_ORDERS = 3
 
 
 BAND_SIZE = list(reversed([i / 10 for i in range(DIAPASON[0] * 10, DIAPASON[1] * 10 + 1, int(DIAPASON[2] * 10))]))
@@ -54,10 +55,16 @@ class Variant:
         bottom_price = float(kline[3])
         buy_price = round(top_price * ((100 - self.band_size[0]) / 100), self.prise_precision)
         sell_price = round(bottom_price * ((100 + self.band_size[0]) / 100), self.prise_precision)
+        deep_sells = DEEP_ORDERS
+        deep_buys = DEEP_ORDERS
 
         if buy_price > self.buy_prices[0] or self.rebalanser == 1:
             self.rebalanser = 0
             for i in range(len(self.balancer)):
+                if deep_buys:
+                    deep_buys -= 1
+                else:
+                    break
                 if self.balancer[i] >= 0:
                     buy_price = round(top_price * ((100 - self.band_size[i]) / 100), self.prise_precision)
 
@@ -72,6 +79,10 @@ class Variant:
         if sell_price < self.sell_prices[0] or self.rebalanser == -1:
             self.rebalanser = 0
             for i in range(len(self.balancer)):
+                if deep_sells:
+                    deep_sells -= 1
+                else:
+                    break
                 if self.balancer[i] <= 0:
 
                     sell_price = round(bottom_price * ((100 + self.band_size[i]) / 100), self.prise_precision)
