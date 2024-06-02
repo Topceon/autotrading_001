@@ -58,13 +58,13 @@ def get_acc_info(order, headers, params):
 
 
 def get_acc_balace(headers, params):
-    try:
-        req = requests.get(BASE_URL + "/fapi/v2/account", headers=headers, params=params)
-        return req.json()
-    except Exception as e:
-        print(e)
-        time.sleep(10)
+    req = requests.get(BASE_URL + "/fapi/v2/account", headers=headers, params=params)
+    balance_info = req.json()
+    if "assets" not in balance_info:
+        time.sleep(2)
         get_acc_balace(headers, params)
+    else:
+        return balance_info
 
 
 if __name__ == '__main__':
