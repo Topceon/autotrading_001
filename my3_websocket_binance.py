@@ -208,7 +208,7 @@ def renew_listen_key():
 
 
 def start_all_vars():
-    options_for_functions(begin_all_vars, 60, [])
+    options_for_functions(begin_all_vars, 120, [])
 
 
 functions_for_start = [start_ws,
