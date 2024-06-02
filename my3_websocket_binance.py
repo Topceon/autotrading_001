@@ -157,8 +157,8 @@ def begin_all_vars():
         prices[coin] = kline_try(coin)
         if prices[coin] is None:
             prices[coin] = kline_try(coin)
-    # for i in all_vars:
-    #     i.create_all_positions(prices[i.coin_pair])
+    for i in all_vars:
+        i.create_all_positions(prices[i.coin_pair])
 
 
 def message_handler(_, message):
