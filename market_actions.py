@@ -43,7 +43,6 @@ def create_order(order, headers, params):
     req = requests.post(BASE_URL + url_order, headers=headers, params=params)
     return req.json()
 
-
 def del_orders(headers, params):
     req = requests.delete(BASE_URL + "/fapi/v1/allOpenOrders", headers=headers, params=params)
     return req.json()

@@ -14,9 +14,19 @@ PRICE_PRECISION = {'1000PEPEUSDT': 7, 'WLDUSDT': 4}
 LOT_SIZE = {'1000PEPEUSDT': 1, 'WLDUSDT': 1}
 BALANCE_PESETAGE = 10
 BALANCE = 10
-DEEP_ORDERS = 3
+DEEP_ORDERS = 4
 
-BAND_SIZE = list(reversed([i / 10 for i in range(DIAPASON[0] * 10, DIAPASON[1] * 10 + 1, int(DIAPASON[2] * 10))]))
+BAND_SIZE = list(
+    reversed([i / 10 for i in range(int(DIAPASON[0] * 10), int(DIAPASON[1] * 10 + 1), int(DIAPASON[2] * 10))]))
+
+
+def close_order_with_id(coin, order_id):
+    try:
+        cp.close_order_with_id(coin, order_id)
+    except Exception as e:
+        print("Не получилось удалить ставку", e)
+        time.sleep(10)
+        close_order_with_id(coin, order_id)
 
 
 class Variant:
@@ -37,45 +47,52 @@ class Variant:
         str_precision = str(self.lot_size)
         return str_precision.count('0')
 
-    def create_position(self, price, side):
+    def create_position(self, price, side, index):
         quantity = round(int(BALANCE / BALANCE_PESETAGE / price) + self.lot_size, self.lot_size_precision)
         try:
-            order = cp.create_position({'symbol': self.coin_pair,
-                                        'side': side,
-                                        'type': 'LIMIT',
-                                        'price': round(price, self.prise_precision),
-                                        'quantity': quantity})
-            return order['orderId']
+            if side == "BUY":
+                order = cp.create_position({'symbol': self.coin_pair,
+                                            'side': side,
+                                            'type': 'LIMIT',
+                                            'price': round(price, self.prise_precision),
+                                            'quantity': quantity})
+                self.id_buy_positions[index] = order["orderId"]
+            elif side == "SELL":
+                order = cp.create_position({'symbol': self.coin_pair,
+                                            'side': side,
+                                            'type': 'LIMIT',
+                                            'price': round(price, self.prise_precision),
+                                            'quantity': quantity})
+
+                self.id_sell_positions[index] = order["orderId"]
         except Exception as e:
-            time.sleep(2)
-            print('заявка не сработала', e)
-            # self.create_position(price, side)
+            print("ставка не сработала", e)
+            time.sleep(10)
+            self.create_position(price, side, index)
 
     def order_buy_positions(self):
         deep_buys = DEEP_ORDERS
         for i in range(len(self.balancer)):
             if self.balancer[i] >= 0:
+                if self.id_buy_positions[i] is not None:
+                    close_order_with_id(self.coin_pair, self.id_buy_positions[i])
                 if deep_buys:
                     deep_buys -= 1
                 else:
                     break
-                if self.id_buy_positions[i] is not None:
-                    cp.close_order_with_id(self.coin_pair, self.id_buy_positions[i])
-                order_id = self.create_position(self.buy_prices[i], "BUY")
-                self.id_buy_positions[i] = order_id
+                self.create_position(self.buy_prices[i], "BUY", i)
 
     def order_sell_positions(self):
         deep_sell = DEEP_ORDERS
         for i in range(len(self.balancer)):
             if self.balancer[i] <= 0:
+                if self.id_sell_positions[i] is not None:
+                    close_order_with_id(self.coin_pair, self.id_sell_positions[i])
                 if deep_sell:
                     deep_sell -= 1
                 else:
                     break
-                if self.id_sell_positions[i] is not None:
-                    cp.close_order_with_id(self.coin_pair, self.id_sell_positions[i])
-                order_id = self.create_position(self.sell_prices[i], "SELL")
-                self.id_sell_positions[i] = order_id
+                self.create_position(self.sell_prices[i], "SELL", i)
 
     def create_all_positions(self, kline):  # [время открытия, открытие, максимум свечи, минимум свечи, закрытие, объем]
         top_price = float(kline[2])
@@ -104,7 +121,6 @@ class Variant:
                     self.sell_prices.append(sell_price)
                     bottom_price = sell_price
             self.order_sell_positions()
-
 
     def change_balanser(self, orderid, side):
         if side == 'BUY':
@@ -144,13 +160,22 @@ def kline_try(coin):
         return ma.get_klines(coin)[-1]
     except Exception as e:
         print(e)
-        time.sleep(2)
+        time.sleep(10)
         kline_try(coin)
 
 
-def begin_all_vars():
+def get_acc_balace():
     global BALANCE
-    BALANCE = float(cp.get_acc_balace())
+    try:
+        BALANCE = float(cp.get_acc_balace())
+    except Exception as e:
+        print(e)
+        time.sleep(10)
+        get_acc_balace()
+
+
+def begin_all_vars():
+    get_acc_balace()
     print(BALANCE)
     prices = {}
     for coin in COIN_PAIRS:
@@ -208,7 +233,7 @@ def renew_listen_key():
 
 
 def start_all_vars():
-    options_for_functions(begin_all_vars, 120, [])
+    options_for_functions(begin_all_vars, 60, [])
 
 
 functions_for_start = [start_ws,

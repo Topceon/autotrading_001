@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import time
 
 import market_actions as ma
 import keys
@@ -14,6 +15,7 @@ def signature(params):
     return signature
 
 
+retorn = ''
 def create_position(order):
     global url_order
     if order["type"] == "LIMIT":
@@ -57,7 +59,8 @@ def create_position(order):
     headers = {'X-MBX-APIKEY': keys.API_key}
     if order['type'] == 'CancelOrder':
         return ma.del_orders(headers, params)
-    return ma.create_order(order, headers, params)
+    a = ma.create_order(order, headers, params)
+    return a
 
 
 def new_listen_key():
@@ -143,5 +146,8 @@ if __name__ == '__main__':
     # получить новый listen_key, нужен для websocket
     # print(new_listen_key())
 
-    print(close_order_with_id('1000PEPEUSDT', '8741814116'))
-    print("")
+    # print(close_order_with_id('1000PEPEUSDT', '8741814116'))
+    # print("")
+
+    a = get_acc_balace()
+    print(a)
