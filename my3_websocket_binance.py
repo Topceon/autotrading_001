@@ -102,25 +102,25 @@ class Variant:
 
         if buy_price > self.buy_prices[0] or self.rebalanser == 1:
             self.rebalanser = 0
-            self.buy_prices = []
             for i in range(len(self.balancer)):
                 if self.balancer[i] >= 0:
                     buy_price = round(top_price * ((100 - self.band_size[i]) / 100), self.prise_precision)
 
-                    self.buy_prices.append(buy_price)
+                    self.buy_prices[i] = buy_price
                     top_price = buy_price
             self.order_buy_positions()
+            print("BUY", self.buy_prices)
 
         if sell_price < self.sell_prices[0] or self.rebalanser == -1:
             self.rebalanser = 0
-            self.sell_prices = []
             for i in range(len(self.balancer)):
                 if self.balancer[i] <= 0:
                     sell_price = round(bottom_price * ((100 + self.band_size[i]) / 100), self.prise_precision)
 
-                    self.sell_prices.append(sell_price)
+                    self.sell_prices[i] = sell_price
                     bottom_price = sell_price
             self.order_sell_positions()
+            print("SELL", self.sell_prices)
 
     def change_balanser(self, orderid, side):
         if side == 'BUY':
@@ -128,13 +128,11 @@ class Variant:
             self.rebalanser = -1 if order_index == 0 else 0
             self.balancer[order_index] = -1
             self.id_buy_positions[order_index] = None
-            self.order_buy_positions()
         else:
             order_index = self.id_sell_positions.index(orderid)
             self.rebalanser = 1 if order_index == 0 else 0
             self.balancer[order_index] = 1
             self.id_sell_positions[order_index] = None
-            self.order_sell_positions()
         print('Изменяем баланс', self.coin_pair, self.balancer)
 
 
