@@ -31,6 +31,8 @@ def close_order_with_id(coin, order_id):
 
 class Variant:
     def __init__(self, coin_pair, prise_precision, lot_size):
+        self.top_price = 0
+        self.bottom_price = 0
         self.balancer = [0 for _ in BAND_SIZE]
         self.coin_pair = coin_pair
         self.band_size = BAND_SIZE
@@ -46,6 +48,17 @@ class Variant:
     def lot_size_precision(self):
         str_precision = str(self.lot_size)
         return str_precision.count('0')
+
+    def kline_try(self):
+        try:
+            kline = ma.get_klines(self.coin_pair)[-1]
+            self.top_price = float(kline[2])
+            self.bottom_price = float(kline[3])
+
+        except Exception as e:
+            print(e)
+            time.sleep(10)
+            kline_try()
 
     def create_position(self, price, side, index):
         quantity = round(int(BALANCE / BALANCE_PESETAGE / price) + self.lot_size, self.lot_size_precision)
@@ -94,12 +107,9 @@ class Variant:
                     break
                 self.create_position(self.sell_prices[i], "SELL", i)
 
-    def create_all_positions(self, kline):  # [время открытия, открытие, максимум свечи, минимум свечи, закрытие, объем]
-        top_price = float(kline[2])
-        bottom_price = float(kline[3])
-        buy_price = round(top_price * ((100 - self.band_size[0]) / 100), self.prise_precision)
-        sell_price = round(bottom_price * ((100 + self.band_size[0]) / 100), self.prise_precision)
-
+    def get_buy_prices(self):
+        buy_price = round(self.top_price * ((100 - self.band_size[0]) / 100), self.prise_precision)
+        top_price = self.top_price
         if buy_price > self.buy_prices[0] or self.rebalanser == 1:
             self.rebalanser = 0
             for i in range(len(self.balancer)):
@@ -109,8 +119,10 @@ class Variant:
                     self.buy_prices[i] = buy_price
                     top_price = buy_price
             self.order_buy_positions()
-            print("BUY", self.buy_prices)
 
+    def get_sell_prices(self):
+        sell_price = round(self.bottom_price * ((100 + self.band_size[0]) / 100), self.prise_precision)
+        bottom_price = self.bottom_price
         if sell_price < self.sell_prices[0] or self.rebalanser == -1:
             self.rebalanser = 0
             for i in range(len(self.balancer)):
@@ -120,7 +132,12 @@ class Variant:
                     self.sell_prices[i] = sell_price
                     bottom_price = sell_price
             self.order_sell_positions()
-            print("SELL", self.sell_prices)
+
+    def create_all_positions(self):  # [время открытия, открытие, максимум свечи, минимум свечи, закрытие, объем]
+        self.kline_try()
+
+        self.get_buy_prices()
+        self.get_sell_prices()
 
     def change_balanser(self, orderid, side):
         if side == 'BUY':
@@ -128,11 +145,13 @@ class Variant:
             self.rebalanser = -1 if order_index == 0 else 0
             self.balancer[order_index] = -1
             self.id_buy_positions[order_index] = None
+            self.order_buy_positions()
         else:
             order_index = self.id_sell_positions.index(orderid)
             self.rebalanser = 1 if order_index == 0 else 0
             self.balancer[order_index] = 1
             self.id_sell_positions[order_index] = None
+            self.order_sell_positions()
         print('Изменяем баланс', self.coin_pair, self.balancer)
 
 
@@ -175,13 +194,8 @@ def get_acc_balace():
 def begin_all_vars():
     get_acc_balace()
     print(BALANCE)
-    prices = {}
-    for coin in COIN_PAIRS:
-        prices[coin] = kline_try(coin)
-        if prices[coin] is None:
-            prices[coin] = kline_try(coin)
     for i in all_vars:
-        i.create_all_positions(prices[i.coin_pair])
+        i.create_all_positions()
 
 
 def message_handler(_, message):
