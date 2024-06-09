@@ -1,9 +1,9 @@
 import time
-import uuid
 
 import requests
 
 import keys
+import action_decition as ad
 
 BASE_URL = "https://fapi.binance.com"
 klines_url_order = "/fapi/v1/klines"
@@ -66,9 +66,22 @@ def get_acc_balace(headers, params):
     else:
         return balance_info
 
+def get_precisions():
+    price_precision = {}
+    lot_size = {}
+    req = requests.get(BASE_URL + '/fapi/v1/exchangeInfo')
+    info = req.json()
+    for i in info['symbols']:
+        s = i['symbol']
+        price_precision[s] = ad.lot_size_precision(i['filters'][0]['tickSize'])
+        lot_size[s] = float(i['filters'][1]['stepSize'])
+    return price_precision, lot_size
+
 
 if __name__ == '__main__':
     # входящие данные ["BLZUSDT", "AVAXUSDT", "ARBUSDT"]
     # результат {"AVAXUSDT":[время открытия свечи, цена открытия, максимум свечи, минимум свечи, цена закрытия, объем]}
-    print(get_klines("1000PEPEUSDT"))
+    a, b = get_precisions()
+    print(a)
+    print(b)
     # print(get_acc_info())
