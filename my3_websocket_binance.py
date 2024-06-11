@@ -364,7 +364,7 @@ class Variant:
         except Exception as e:
             print(e)
             time.sleep(10)
-            kline_try()
+            self.kline_try()
 
     def create_position(self, price, side, index):
         factor = 10 ** self.lot_size_precision
