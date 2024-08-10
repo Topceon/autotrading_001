@@ -322,7 +322,7 @@ COIN_PAIRS = [
     # "TURBOUSDT"
 ]
 PRICE_PRECISION, LOT_SIZE = ma.get_precisions()
-BALANCE_PERSENTAGE = 5 * len(COIN_PAIRS)
+BALANCE_PERSENTAGE = 8 * len(COIN_PAIRS)
 BALANCE = 10
 DEEP_ORDERS = 4
 
@@ -396,24 +396,32 @@ class Variant:
         for i in range(len(self.balancer)):
             if self.balancer[i] >= 0:
                 if self.id_buy_positions[i] is not None:
+                    print('закрываем ордер')
                     close_order_with_id(self.coin_pair, self.id_buy_positions[i])
+                    print('ордер закрыт')
                 if deep_buys:
                     deep_buys -= 1
                 else:
                     break
+                print('создаем ордер')
                 self.create_position(self.buy_prices[i], "BUY", i)
+                print('ордер ордер создан')
 
     def order_sell_positions(self):
         deep_sell = DEEP_ORDERS
         for i in range(len(self.balancer)):
             if self.balancer[i] <= 0:
                 if self.id_sell_positions[i] is not None:
+                    print('закрываем ордер')
                     close_order_with_id(self.coin_pair, self.id_sell_positions[i])
+                    print('ордер закрыт')
                 if deep_sell:
                     deep_sell -= 1
                 else:
                     break
+                print('создаем ордер')
                 self.create_position(self.sell_prices[i], "SELL", i)
+                print('ордер ордер создан')
 
     def get_buy_prices(self):
         buy_price = round(self.top_price * ((100 - self.band_size[0]) / 100), self.prise_precision)
@@ -442,10 +450,13 @@ class Variant:
             self.order_sell_positions()
 
     def create_all_positions(self):  # [время открытия, открытие, максимум свечи, минимум свечи, закрытие, объем]
+        print('запрос свечей')
         self.kline_try()
-
+        print('свечи получены, создание ставок на покупку')
         self.get_buy_prices()
+        print('ставки на покупку выставлены, создание ставок на продажу')
         self.get_sell_prices()
+        print('ставки на продажу выставлены')
 
     def change_balanser(self, orderid, side):
         if side == 'BUY':
@@ -500,6 +511,7 @@ def get_acc_balace():
 
 
 def begin_all_vars():
+    print('запрос баланса')
     get_acc_balace()
     print(BALANCE)
     for i in all_vars:
