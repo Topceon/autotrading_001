@@ -117,9 +117,14 @@ def get_acc_balace():
     params['signature'] = signature(params)
     headers = {'X-MBX-APIKEY': keys.API_key}
     all_info = ma.get_acc_balace(headers, params)
-    for i in all_info['assets']:
-        if i['asset'] == 'USDT':
-            return i['walletBalance']
+    if "assets" not in all_info:
+        print('возникла проблема с получением баланса')
+        time.sleep(10)
+        get_acc_balace()
+    else:
+        for i in all_info['assets']:
+            if i['asset'] == 'USDT':
+                return i['walletBalance']
 
 
 if __name__ == '__main__':
