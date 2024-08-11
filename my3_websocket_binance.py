@@ -499,7 +499,6 @@ def get_acc_balace():
 
 
 def begin_all_vars():
-    print('запрос баланса')
     get_acc_balace()
     print(BALANCE)
     for i in all_vars:
