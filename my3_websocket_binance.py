@@ -3,19 +3,19 @@ import requests
 import threading
 import time
 import json
-import math
 
 import keys
 import market_actions as ma
 import create_position as cp
 import action_decition as ad
 
+DEBUG = 1
 DIAPASON = [1, 3, 0.04]  # [конечный процент, начальный процент, разница между ставками]
 COIN_PAIRS = [
     # "BTCUSDT",
     # "ETHUSDT",
     # "BCHUSDT",
-    # "XRPUSDT",
+    "XRPUSDT",
     # "EOSUSDT",
     # "LTCUSDT",
     # "TRXUSDT",
@@ -145,7 +145,7 @@ COIN_PAIRS = [
     # "DARUSDT",
     # "GALUSDT",
     # "OPUSDT",
-    "INJUSDT",
+    # "INJUSDT", 1
     # "STGUSDT",
     # "SPELLUSDT",
     # "1000LUNCUSDT",
@@ -172,7 +172,7 @@ COIN_PAIRS = [
     # "BNXUSDT",
     # "ACHUSDT",
     # "SSVUSDT",
-    "CKBUSDT",
+    # "CKBUSDT", 1
     # "PERPUSDT",
     # "TRUUSDT",
     # "LQTYUSDT",
@@ -191,7 +191,7 @@ COIN_PAIRS = [
     # "EDUUSDT",
     # "IDEXUSDT",
     # "SUIUSDT",
-    "1000PEPEUSDT",
+    # "1000PEPEUSDT", 1
     # "1000FLOKIUSDT",
     # "UMAUSDT",
     # "RADUSDT",
@@ -201,7 +201,7 @@ COIN_PAIRS = [
     # "MAVUSDT",
     # "MDTUSDT",
     # "XVGUSDT",
-    "WLDUSDT",
+    # "WLDUSDT", 1
     # "PENDLEUSDT",
     # "ARKMUSDT",
     # "AGLDUSDT",
@@ -243,7 +243,7 @@ COIN_PAIRS = [
     # "KASUSDT",
     # "BEAMXUSDT",
     # "1000BONKUSDT",
-    "PYTHUSDT",
+    # "PYTHUSDT",1
     # "SUPERUSDT",
     # "USTCUSDT",
     # "ONGUSDT",
@@ -323,11 +323,13 @@ COIN_PAIRS = [
 ]
 PRICE_PRECISION, LOT_SIZE = ma.get_precisions()
 BALANCE_PERSENTAGE = 8 * len(COIN_PAIRS)
+if DEBUG:
+    BALANCE_PERSENTAGE = 48 # для выставления минимальной ставки нужно поставить цифру в 10 раз меньше текущего депозита
 BALANCE = 10
 DEEP_ORDERS = 4
-
 BAND_SIZE = list(
     reversed([i / 100 for i in range(int(DIAPASON[0] * 100), int(DIAPASON[1] * 100 + 1), int(DIAPASON[2] * 100))]))
+BALANSER = ad.get_balanser_from_file()
 
 
 def close_order_with_id(coin, order_id):
@@ -343,7 +345,7 @@ class Variant:
     def __init__(self, coin_pair, prise_precision, lot_size):
         self.top_price = 0
         self.bottom_price = 0
-        self.balancer = [0 for _ in BAND_SIZE]
+        self.balancer = BALANSER[coin_pair] if coin_pair in BALANSER else [0 for _ in BAND_SIZE]
         self.coin_pair = coin_pair
         self.band_size = BAND_SIZE
         self.id_sell_positions = [None for _ in BAND_SIZE]
@@ -445,6 +447,7 @@ class Variant:
         self.kline_try()
         self.get_buy_prices()
         self.get_sell_prices()
+        BALANSER[self.coin_pair] = self.balancer
 
     def change_balanser(self, orderid, side):
         if side == 'BUY':
@@ -503,6 +506,7 @@ def begin_all_vars():
     print(BALANCE)
     for i in all_vars:
         i.create_all_positions()
+    ad.get_balanser_for_file(BALANSER)
 
 
 def message_handler(_, message):
@@ -545,7 +549,6 @@ def start_ws():
         except Exception as e:
             print('Проблема сокета', e)
             time.sleep(5)
-
 
 def renew_listen_key():
     options_for_functions(new_listen_key, 3500, [], after=False)
