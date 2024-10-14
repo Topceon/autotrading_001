@@ -13,15 +13,21 @@ def lot_size_precision(a):
 
 
 def get_balanser_from_file():
-    with open("config.txt", "r") as file:
+    with open("vol/config.txt", "r") as file:
         balansers = json.load(file)
     return balansers
 
 def get_balanser_for_file(balansers):
-    with open("config.txt", "w") as file:
+    with open("vol/config.txt", "w") as file:
         json.dump(balansers, file)
 
+def get_coins_from_file():
+    with open("vol/coins.txt", "r") as file:
+        coins = json.loads(file.readline())
+    return coins
 
 if __name__ == '__main__':
-    print(len(get_balanser_from_file()["XRPUSDT"]))
+    a = get_coins_from_file()
+    print(a)
+    print(type(a))
     # print(lot_size_precision('0.0000000001'))
